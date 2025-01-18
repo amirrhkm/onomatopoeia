@@ -28,3 +28,10 @@ target/
 node_modules/
 package-lock.json
 package.json
+
+# Maps
+*.tsx
+*.tiled-session
+*.tiled-project
+*.png
+*.psd
