@@ -42,29 +42,24 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void render() {
-        // Clear the screen
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(Gdx.gl.GL_COLOR_BUFFER_BIT);
 
         float deltaTime = Gdx.graphics.getDeltaTime();
 
-        // Map dimensions
         float mapWidth = mapRenderer.getMap().getProperties().get("width", Integer.class) *
                         mapRenderer.getMap().getProperties().get("tilewidth", Integer.class);
         float mapHeight = mapRenderer.getMap().getProperties().get("height", Integer.class) *
                         mapRenderer.getMap().getProperties().get("tileheight", Integer.class);
 
-        // Camera viewport dimensions
         float effectiveViewportWidth = camera.viewportWidth * camera.zoom;
         float effectiveViewportHeight = camera.viewportHeight * camera.zoom;
 
-        // Boundary calculations
         float minX = effectiveViewportWidth / 2;
         float maxX = mapWidth - effectiveViewportWidth / 2;
         float minY = effectiveViewportHeight / 2;
         float maxY = mapHeight - effectiveViewportHeight / 2;
 
-        // Character movement
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             characterX = Math.max(0, characterX - characterSpeed * deltaTime);
         }
@@ -78,16 +73,13 @@ public class Main extends ApplicationAdapter {
             characterY = Math.max(0, characterY - characterSpeed * deltaTime);
         }
 
-        // Center the camera on the character
         camera.position.x = Math.min(maxX, Math.max(minX, characterX));
         camera.position.y = Math.min(maxY, Math.max(minY, characterY));
         camera.update();
 
-        // Render the map
         mapRenderer.setView(camera);
         mapRenderer.render();
 
-        // Draw the character
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
         batch.draw(characterTexture, characterX, characterY, 64, 64);
