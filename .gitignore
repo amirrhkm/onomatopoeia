@@ -35,3 +35,6 @@ package.json
 *.tiled-project
 *.png
 *.psd
+
+# Character
+*.aseprite

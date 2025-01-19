@@ -4,7 +4,9 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
@@ -14,66 +16,89 @@ public class Main extends ApplicationAdapter {
     private OrthographicCamera camera;
     private SpriteBatch batch;
     private OrthogonalTiledMapRenderer mapRenderer;
+    private TiledMap map;
 
-    private static final float CAMERA_SPEED = 2f;
+    private Texture characterTexture;
     private static final float VIEWPORT_WIDTH = 800;
     private static final float VIEWPORT_HEIGHT = 600;
+    private float characterX = 400.0f;
+    private float characterY = 300.0f;
+    private final float characterSpeed = 100.0f;
 
     @Override
     public void create() {
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 800, 600);
-        camera.zoom = 0.5f;
+        camera.zoom = 1f;
         
         batch = new SpriteBatch();
         
         mapRenderer = new OrthogonalTiledMapRenderer(
-            new TmxMapLoader().load("../maps/main/map_main.tmx"), 1
+            new TmxMapLoader().load("../assets/maps/main/map_main.tmx"), 1
         );
+
+        characterTexture = new Texture("../assets/player/main/character_main.png");
     }
 
     @Override
     public void render() {
+        // Clear the screen
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(Gdx.gl.GL_COLOR_BUFFER_BIT);
 
+        float deltaTime = Gdx.graphics.getDeltaTime();
+
+        // Map dimensions
+        float mapWidth = mapRenderer.getMap().getProperties().get("width", Integer.class) *
+                        mapRenderer.getMap().getProperties().get("tilewidth", Integer.class);
+        float mapHeight = mapRenderer.getMap().getProperties().get("height", Integer.class) *
+                        mapRenderer.getMap().getProperties().get("tileheight", Integer.class);
+
+        // Camera viewport dimensions
+        float effectiveViewportWidth = camera.viewportWidth * camera.zoom;
+        float effectiveViewportHeight = camera.viewportHeight * camera.zoom;
+
+        // Boundary calculations
+        float minX = effectiveViewportWidth / 2;
+        float maxX = mapWidth - effectiveViewportWidth / 2;
+        float minY = effectiveViewportHeight / 2;
+        float maxY = mapHeight - effectiveViewportHeight / 2;
+
+        // Character movement
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            characterX = Math.max(0, characterX - characterSpeed * deltaTime);
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+            characterX = Math.min(mapWidth - 32, characterX + characterSpeed * deltaTime);
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
+            characterY = Math.min(mapHeight - 32, characterY + characterSpeed * deltaTime);
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+            characterY = Math.max(0, characterY - characterSpeed * deltaTime);
+        }
+
+        // Center the camera on the character
+        camera.position.x = Math.min(maxX, Math.max(minX, characterX));
+        camera.position.y = Math.min(maxY, Math.max(minY, characterY));
         camera.update();
 
+        // Render the map
         mapRenderer.setView(camera);
         mapRenderer.render();
 
-        float effectiveViewportWidth = VIEWPORT_WIDTH * camera.zoom;
-        float effectiveViewportHeight = VIEWPORT_HEIGHT * camera.zoom;
-
-        // Calculate the boundaries
-        float minX = effectiveViewportWidth / 2;
-        float maxX = mapRenderer.getMap().getProperties().get("width", Integer.class) * 
-                    mapRenderer.getMap().getProperties().get("tilewidth", Integer.class) - 
-                    effectiveViewportWidth / 2;
-        float minY = effectiveViewportHeight / 2;
-        float maxY = mapRenderer.getMap().getProperties().get("height", Integer.class) * 
-                    mapRenderer.getMap().getProperties().get("tileheight", Integer.class) - 
-                    effectiveViewportHeight / 2;
-
-        // Handle movement with bounds checking
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            camera.position.x = Math.max(minX, camera.position.x - CAMERA_SPEED);
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            camera.position.x = Math.min(maxX, camera.position.x + CAMERA_SPEED);
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
-            camera.position.y = Math.min(maxY, camera.position.y + CAMERA_SPEED);
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            camera.position.y = Math.max(minY, camera.position.y - CAMERA_SPEED);
-        }
+        // Draw the character
+        batch.setProjectionMatrix(camera.combined);
+        batch.begin();
+        batch.draw(characterTexture, characterX, characterY, 64, 64);
+        batch.end();
     }
 
     @Override
     public void dispose() {
         batch.dispose();
         mapRenderer.dispose();
+        characterTexture.dispose();
     }
 
     public static void main(String[] args) {
